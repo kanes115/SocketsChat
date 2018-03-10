@@ -4,14 +4,15 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.UnknownHostException;
 
 public class MulticastReceiver  implements Runnable {
 
     private final MulticastSocket mcSocket;
+    private final int bufferSize;
 
-    public MulticastReceiver(MulticastSocket mcSocket, String mcIpString) throws IOException {
+    public MulticastReceiver(MulticastSocket mcSocket, String mcIpString, int bufferSize) throws IOException {
         this.mcSocket = mcSocket;
+        this.bufferSize = bufferSize;
         joinGroup(mcIpString);
     }
 
@@ -26,7 +27,7 @@ public class MulticastReceiver  implements Runnable {
 
         try {
             while(true) {
-                DatagramPacket packet = new DatagramPacket(new byte[2048], 2048);
+                DatagramPacket packet = new DatagramPacket(new byte[this.bufferSize], this.bufferSize);
 
                 mcSocket.receive(packet);
                 String msg = new String(packet.getData(), packet.getOffset(),
@@ -35,6 +36,7 @@ public class MulticastReceiver  implements Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(0);
         }
     }
 }

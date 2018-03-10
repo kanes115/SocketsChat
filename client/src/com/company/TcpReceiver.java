@@ -24,6 +24,7 @@ public class TcpReceiver implements Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(0);
         }
     }
 

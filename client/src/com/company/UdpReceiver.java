@@ -6,14 +6,16 @@ import java.net.DatagramSocket;
 
 public class UdpReceiver implements Runnable {
     private DatagramSocket socket;
+    private int bufferSize;
 
-    public UdpReceiver(DatagramSocket socket){
+    public UdpReceiver(DatagramSocket socket, int bufferSize){
         this.socket = socket;
+        this.bufferSize = bufferSize;
     }
 
     @Override
     public void run() {
-        byte[] receiveBuffer = new byte[2048];
+        byte[] receiveBuffer = new byte[this.bufferSize];
         try {
             while(true) {
                 DatagramPacket receivePacket =
@@ -24,6 +26,7 @@ public class UdpReceiver implements Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(0);
         }
     }
 }

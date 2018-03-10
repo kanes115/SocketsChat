@@ -30,6 +30,7 @@ public class UdpSender {
             socket.send(sendPacket);
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(0);
         }
     }
 

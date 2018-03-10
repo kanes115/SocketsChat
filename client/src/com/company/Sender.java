@@ -1,5 +1,7 @@
 package com.company;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.*;
@@ -11,12 +13,14 @@ public class Sender implements Runnable {
     private TcpSender tcpSender;
     private MulticastSender mcSender;
     private String config;
+    private String mediaFilePath;
     private UdpSender udpSender;
 
-    public Sender(TcpSender tcpSender, UdpSender udpSender, MulticastSender mcSender, String config) throws IOException {
+    public Sender(TcpSender tcpSender, UdpSender udpSender, MulticastSender mcSender, String config, String mediaFilePath) throws IOException {
         this.tcpSender = tcpSender;
         this.mcSender = mcSender;
         this.config = config;
+        this.mediaFilePath = mediaFilePath;
         this.ioManager = new IoManager();
         this.udpSender = udpSender;
     }
@@ -28,9 +32,9 @@ public class Sender implements Runnable {
             while(true) {
                 String msg = ioManager.getInput();
                 if(msg.equals("\\U"))
-                    udpSender.send("PingPong");
+                    udpSender.send(getMedia());
                 else if(msg.equals("\\M"))
-                    mcSender.send("PingPong");
+                    mcSender.send(getMedia());
                 else
                     tcpSend(msg);
             }
@@ -46,6 +50,10 @@ public class Sender implements Runnable {
 
     private void sendMedia(){
         udpSender.send("PingPong");
+    }
+
+    private String getMedia() throws FileNotFoundException {
+        return new Scanner(new File(this.mediaFilePath)).useDelimiter("\\Z").next();
     }
 
 }

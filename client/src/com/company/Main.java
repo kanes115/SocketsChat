@@ -9,14 +9,17 @@ import java.net.Socket;
 public class Main {
 
     // Server's info
-    private static int serverPort = 4003;
+    private static int serverPort = 4005;
     private static String serverIp = "localhost";
     // On what port I listen to UDP packets (and also my host)
-    private static int udpReceivePort = 6901;   //Should change among clients (configuration of udpReceivePort and myAddress
+    private static int udpReceivePort = 6905;   //Should change among clients (configuration of udpReceivePort and myAddress
     private static String myAddress = "127.0.0.1";
     // Multicast info
     private static int mcPort = 9800;
     private static String mcIp = "224.0.0.1";
+    // media file path
+    private static String mediaFilePath = "./resources/asciiart";
+    private static int bufferSize = 5500;
 
     public static void main(String[] args) {
 
@@ -32,11 +35,11 @@ public class Main {
             TcpSender tcpSender = new TcpSender(tcpSocket);
             MulticastSender mcSender = new MulticastSender(udpSocket, mcIp, mcPort);
 
-            Sender sender = new Sender(tcpSender, udpSender, mcSender, configBuilder.getConfig());
+            Sender sender = new Sender(tcpSender, udpSender, mcSender, configBuilder.getConfig(), mediaFilePath);
 
             TcpReceiver tcpReceiver = new TcpReceiver(tcpSocket);
-            UdpReceiver udpReceiver = new UdpReceiver(udpSocket);
-            MulticastReceiver mcReceiver = new MulticastReceiver(mcSocket, mcIp);
+            UdpReceiver udpReceiver = new UdpReceiver(udpSocket, bufferSize);
+            MulticastReceiver mcReceiver = new MulticastReceiver(mcSocket, mcIp, bufferSize);
 
 
             new Thread(tcpReceiver).start();
