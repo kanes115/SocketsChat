@@ -19,10 +19,14 @@ public class UdpSender {
     }
 
     public void send(String msg) {
+        send(msg, serverAddress, serverPort);
+    }
+
+    private void send(String msg, InetAddress address, int port){
         try {
             byte[] sendBuffer = msg.getBytes();
             DatagramPacket sendPacket;
-            sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, serverAddress, serverPort);
+            sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, address, port);
             socket.send(sendPacket);
         } catch (IOException e) {
             e.printStackTrace();

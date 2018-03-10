@@ -9,12 +9,13 @@ public class Sender implements Runnable {
 
     private final IoManager ioManager;
     private TcpSender tcpSender;
+    private MulticastSender mcSender;
     private String config;
     private UdpSender udpSender;
-    private PrintWriter out;
 
-    public Sender(TcpSender tcpSender, UdpSender udpSender, String config) throws IOException {
+    public Sender(TcpSender tcpSender, UdpSender udpSender, MulticastSender mcSender, String config) throws IOException {
         this.tcpSender = tcpSender;
+        this.mcSender = mcSender;
         this.config = config;
         this.ioManager = new IoManager();
         this.udpSender = udpSender;
@@ -27,7 +28,9 @@ public class Sender implements Runnable {
             while(true) {
                 String msg = ioManager.getInput();
                 if(msg.equals("\\U"))
-                    sendMedia();
+                    udpSender.send("PingPong");
+                else if(msg.equals("\\M"))
+                    mcSender.send("PingPong");
                 else
                     tcpSend(msg);
             }
