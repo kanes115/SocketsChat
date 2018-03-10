@@ -14,13 +14,17 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
--define(PORT, 4003).
+-define(PORT, 4005).
+-define(ACCEPTOR_NUMBER, 5).
+
+-compile([{parse_transform, lager_transform}]).
 
 %%====================================================================
 %% API functions
 %%====================================================================
 
 start_link() ->
+    lager:info("Server starts at port ~p with ~p acceptors", [?PORT, ?ACCEPTOR_NUMBER]),
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 stop() ->
@@ -34,7 +38,7 @@ stop() ->
 init([]) ->
     SockServ = #{
       id => sockserv_sup,
-      start => {sockserv_sup, start_link, [?PORT]},
+      start => {sockserv_sup, start_link, [?PORT, ?ACCEPTOR_NUMBER]},
       restart => permanent,
       shutdown => brutal_kill,
       type => supervisor,

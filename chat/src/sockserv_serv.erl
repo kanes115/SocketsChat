@@ -7,10 +7,13 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2]).
 
+-compile([{parse_transform, lager_transform}]).
+
 start_link(Socket) ->
     gen_server:start_link(?MODULE, Socket, []).
 
 init(Socket) ->
+    lager:info("Starting socket in a pool (~p)" , [self()]),
     gen_server:cast(self(), accept),
     {ok, #state{socket=Socket, state = wait_for_conn}}.
 
@@ -26,7 +29,6 @@ handle_cast({pass_msg, From, Msg}, #state{state = logged_in, socket = Socket} = 
 handle_cast(accept, S = #state{socket = ListenSocket, state = wait_for_conn}) ->
     {ok, AcceptSocket} = gen_tcp:accept(ListenSocket),
     sockserv_sup:start_socket(),
-    %send(AcceptSocket, "Tell your name:", []),
     {noreply, S#state{socket=AcceptSocket, state = wait_for_config}}.
 
 
@@ -35,11 +37,11 @@ handle_info({tcp, Socket, Data}, #state{state = wait_for_config} = S) ->
     {Name, UdpAddr} = parse_config(Config),
     case sockserv_sup:login(Name, UdpAddr) of
         ok ->
-            io:format("~p logged in!~n", [Name]),
+            lager:info("~p logged in!", [Name]),
             send(Socket, "You are logged in!", []),
             {noreply, S#state{state = logged_in, name = Name}};
         {error, already_exists} ->
-            io:format("~p already exists~n", [Name]),
+            lager:warning("~p already exists", [Name]),
             gen_tcp:close(Socket),
             {stop, normal, stopped}
     end;
@@ -50,15 +52,20 @@ handle_info({tcp, _Socket, Str}, #state{state = logged_in, name = Name} = S) ->
 handle_info({tcp_closed, Socket}, #state{state = logged_in, name = Name}) ->
     sockserv_sup:logout(Name),
     gen_tcp:close(Socket),
-    io:format("Session for ~p closed~n", [Name]),
+    lager:info("Session for ~p closed", [Name]),
     {stop, normal, stopped};
 handle_info({tcp_closed, Socket}, _State) ->
     gen_tcp:close(Socket),
-    io:format("Socket closed without logging in"),
+    lager:info("Socket closed without logging in"),
     {stop, normal, stopped}.
 
 
-% TODO close UDP sockects here as well
+terminate(app_shutdown, #state{socket = Socket, state = logged_in, name = Name}) ->
+    lager:info("Closing session for ~p in pool due to application shutdown (~p)", [Name, self()]),
+    gen_tcp:close(Socket);
+terminate(app_shutdown, #state{socket = Socket}) ->
+    lager:info("Closing socket in pool due to application shutdown (~p)", [self()]),
+    gen_tcp:close(Socket);
 terminate(_Reason, #state{socket = Socket}) ->
     gen_tcp:close(Socket);
 terminate(_, stopped) ->

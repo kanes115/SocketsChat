@@ -9,13 +9,15 @@
 
 -record(state, {socket}).
 
-%% must be started vefore tcp i guess
+-compile([{parse_transform, lager_transform}]).
+
 start_link(Port) ->
     gen_server:start_link(?MODULE, Port, []).
 
 
 
 init(Port) ->
+    lager:info("UDP server starts"),
     {ok, Socket} = gen_udp:open(Port),
     {ok, #state{socket = Socket}}.
 
@@ -28,6 +30,7 @@ handle_cast(_, S) ->
 
 
 handle_info({udp, Socket, Ip, Port, Data}, #state{socket = Socket} = S) ->
+    lager:info("Ip: ~p port: ~p sends multimedia", [Ip, Port]),
     broadcast(Socket, Data, {Ip, Port}),
     {noreply, S}.
 
@@ -44,6 +47,5 @@ broadcast(OwnSocket, Data, MyAddr) ->
                           send(OwnSocket, Addr, Data) end,
                   AllButMe).
 
-send(OwnSocket, {Ip, Port} = Addr, Data) ->
-    io:format("Sending to ~p", [Addr]),
+send(OwnSocket, {Ip, Port}, Data) ->
     gen_udp:send(OwnSocket, Ip, Port, Data).

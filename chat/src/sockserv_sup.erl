@@ -1,29 +1,28 @@
 -module(sockserv_sup).
 -behaviour(supervisor).
 
--export([start_link/1, start_socket/0]).
+-export([start_link/2, start_socket/0]).
 -export([init/1]).
 -export([login/2, logout/1, get_all_users/0]).
 % debug functions
 -export([get_children_states/0]).
 -export([stop/0]).
 
--define(ACCEPTOR_NUMBER, 5).
 
 -record(client, {pid, addr}).
 
-start_link(Port) ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, [Port]).
+start_link(Port, AcceptorsNumber) ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [Port, AcceptorsNumber]).
 
 stop() ->
     lists:foreach(fun({_, Pid, _, _}) ->
                           gen_server:stop(Pid, app_shutdown, 2000) end,
                  supervisor:which_children(?MODULE)).
 
-init([Port]) ->
+init([Port, AcceptorsNumber]) ->
     prepare_ets(),
     {ok, ListenSocket} = gen_tcp:listen(Port, [{active, true}, {packet, line}]),
-    spawn_link(fun empty_listeners/0),
+    spawn_link(fun() -> empty_listeners(AcceptorsNumber) end),
     {ok, {{simple_one_for_one, 60, 3600},
           [{socket,
             {sockserv_serv, start_link, [ListenSocket]},
@@ -31,11 +30,10 @@ init([Port]) ->
           ]}}.
 
 start_socket() ->
-    io:format("Adding process to the pool~n"),
     supervisor:start_child(?MODULE, []).
 
-empty_listeners() ->
-    [start_socket() || _ <- lists:seq(1, ?ACCEPTOR_NUMBER)],
+empty_listeners(Amount) ->
+    [start_socket() || _ <- lists:seq(1, Amount)],
     ok.
 
 prepare_ets() ->
